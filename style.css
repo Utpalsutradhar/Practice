@@ -1,0 +1,26 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+header,
+nav,
+main,
+section,
+article,
+footer {
+  border: 2px solid #333;
+  padding: 16px;
+  margin: 12px;
+}
+section {
+    background-color: aquamarine;
+}
+section {
+    padding: 40px;
+}
+section {
+    margin: 40px;
+}
