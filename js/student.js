@@ -3,10 +3,11 @@ import {
   ref,
   push,
   get,
-  child
+  child,
+  remove
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// ADD STUDENT
+// ADD STUDENT (UNCHANGED)
 window.addStudent = function () {
   const cls = document.getElementById("classSelect").value;
   const name = document.getElementById("studentName").value.trim();
@@ -27,7 +28,7 @@ window.addStudent = function () {
   document.getElementById("studentName").value = "";
 };
 
-// VIEW STUDENTS
+// VIEW STUDENTS + DELETE BUTTON
 window.loadStudents = function () {
   const cls = document.getElementById("viewClass").value;
   const list = document.getElementById("studentList");
@@ -43,13 +44,47 @@ window.loadStudents = function () {
       }
 
       snapshot.forEach(childSnap => {
+        const studentKey = childSnap.key;
+        const studentName = childSnap.val().name;
+
         const li = document.createElement("li");
-        li.textContent = childSnap.val().name;
+        li.style.display = "flex";
+        li.style.justifyContent = "space-between";
+        li.style.alignItems = "center";
+
+        const span = document.createElement("span");
+        span.textContent = studentName;
+
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Delete";
+        delBtn.style.background = "red";
+        delBtn.style.color = "white";
+        delBtn.style.border = "none";
+        delBtn.style.cursor = "pointer";
+
+        delBtn.onclick = () => deleteStudent(cls, studentKey);
+
+        li.appendChild(span);
+        li.appendChild(delBtn);
         list.appendChild(li);
       });
     })
     .catch(err => {
       console.error(err);
       list.innerHTML = "<li>Error loading students</li>";
+    });
+};
+
+// DELETE STUDENT
+window.deleteStudent = function (cls, key) {
+  const confirmDelete = confirm("Are you sure you want to delete this student?");
+  if (!confirmDelete) return;
+
+  remove(ref(db, "students/" + cls + "/" + key))
+    .then(() => {
+      loadStudents(); // refresh list
+    })
+    .catch(err => {
+      console.error("Delete failed", err);
     });
 };
