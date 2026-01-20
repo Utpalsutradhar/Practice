@@ -6,14 +6,16 @@ import {
   update
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const classSelect = document.getElementById("classSelect");
-const examSelect = document.getElementById("examSelect");
+/* =========================
+   DOM ELEMENTS
+========================= */
+const classSelect   = document.getElementById("classSelect");
+const examSelect    = document.getElementById("examSelect");
 const subjectSelect = document.getElementById("subjectSelect");
-const marksTable = document.getElementById("marksTable");
-const saveBtn = document.getElementById("saveBtn");
-const msg = document.getElementById("msg");
+const marksTable    = document.getElementById("marksTable");
+const saveBtn       = document.getElementById("saveBtn");
+const msg           = document.getElementById("msg");
 
-let currentStudents = {}; // studentId → name
 let maxMarks = 0;
 
 /* =========================
@@ -21,47 +23,62 @@ let maxMarks = 0;
 ========================= */
 examSelect.addEventListener("change", () => {
   const opt = examSelect.options[examSelect.selectedIndex];
-  maxMarks = Number(opt.dataset.max || 0);
+  maxMarks = Number(opt?.dataset?.max || 0);
 });
 
 /* =========================
-   LOAD STUDENTS
+   CLASS CHANGE → LOAD STUDENTS
 ========================= */
 classSelect.addEventListener("change", loadStudents);
 
 async function loadStudents() {
   const cls = classSelect.value;
   marksTable.innerHTML = "";
-  currentStudents = {};
 
   if (!cls) return;
 
-  const snapshot = await get(child(ref(db), "students/" + cls));
-  if (!snapshot.exists()) {
-    marksTable.innerHTML = "<tr><td colspan='3'>No students</td></tr>";
-    return;
+  try {
+    const snapshot = await get(child(ref(db), "students/" + cls));
+
+    if (!snapshot.exists()) {
+      marksTable.innerHTML =
+        "<tr><td colspan='3'>No students found</td></tr>";
+      return;
+    }
+
+    // Convert snapshot to array
+    const students = [];
+    snapshot.forEach(snap => {
+      students.push({
+        id: snap.key,
+        ...snap.val()
+      });
+    });
+
+    // Sort by roll number
+    students.sort((a, b) => a.roll - b.roll);
+
+    // Render table
+    students.forEach((stu, index) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${stu.roll}. ${stu.name}</td>
+        <td>
+          <input type="number"
+                 min="0"
+                 max="${maxMarks}"
+                 data-id="${stu.id}">
+        </td>
+      `;
+      marksTable.appendChild(row);
+    });
+
+  } catch (err) {
+    console.error("Failed to load students:", err);
+    marksTable.innerHTML =
+      "<tr><td colspan='3'>Error loading students</td></tr>";
   }
-
-  let i = 1;
-  snapshot.forEach(childSnap => {
-    const studentId = childSnap.key;
-    const studentName = childSnap.val().name;
-
-    currentStudents[studentId] = studentName;
-
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${i++}</td>
-      <td>${studentName}</td>
-      <td>
-        <input type="number"
-               min="0"
-               max="${maxMarks}"
-               data-id="${studentId}">
-      </td>
-    `;
-    marksTable.appendChild(row);
-  });
 }
 
 /* =========================
@@ -70,8 +87,8 @@ async function loadStudents() {
 saveBtn.addEventListener("click", saveMarks);
 
 async function saveMarks() {
-  const cls = classSelect.value;
-  const exam = examSelect.value;
+  const cls     = classSelect.value;
+  const exam    = examSelect.value;
   const subject = subjectSelect.value;
 
   if (!cls || !exam || !subject) {
@@ -80,8 +97,8 @@ async function saveMarks() {
     return;
   }
 
-  if (maxMarks === 0) {
-    msg.textContent = "Invalid exam selection";
+  if (!maxMarks) {
+    msg.textContent = "Select exam first";
     msg.style.color = "red";
     return;
   }
@@ -93,10 +110,10 @@ async function saveMarks() {
     const marks = Number(input.value);
     const studentId = input.dataset.id;
 
-    if (isNaN(marks)) return;
+    if (Number.isNaN(marks)) return;
 
     if (marks < 0 || marks > maxMarks) {
-      msg.textContent = `Marks must be 0–${maxMarks}`;
+      msg.textContent = `Marks must be between 0 and ${maxMarks}`;
       msg.style.color = "red";
       return;
     }
@@ -106,8 +123,13 @@ async function saveMarks() {
     ] = marks;
   });
 
-  await update(ref(db), updates);
-
-  msg.textContent = "Marks saved successfully";
-  msg.style.color = "green";
+  try {
+    await update(ref(db), updates);
+    msg.textContent = "Marks saved successfully";
+    msg.style.color = "green";
+  } catch (err) {
+    console.error("Save failed:", err);
+    msg.textContent = "Error saving marks";
+    msg.style.color = "red";
+  }
 }
