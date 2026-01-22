@@ -1,18 +1,20 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBgFORFeBsvyT06vJx1sUXyrgJcDdBuXKs",
-  authDomain: "school-admin-panel-6d165.firebaseapp.com",
-  projectId: "school-admin-panel-6d165",
-  storageBucket: "school-admin-panel-6d165.firebasestorage.app",
-  messagingSenderId: "300332144263",
-  appId: "1:300332144263:web:bf408b4461d76a43400a22"
+  apiKey: "AIzaSyA-CwOWgmeKTpQWqbnt9yzUrSmZs6naxdE",
+  authDomain: "school-web-app-23fae.firebaseapp.com",
+  databaseURL: "https://school-web-app-23fae-default-rtdb.firebaseio.com",
+  projectId: "school-web-app-23fae",
+  storageBucket: "school-web-app-23fae.firebasestorage.app",
+  messagingSenderId: "720669262440",
+  appId: "1:720669262440:web:9e921ec7f8fdc75bb031dd"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const db = getDatabase(app);
-
-
 
 
