@@ -1,8 +1,7 @@
 import { db } from "./firebase.js";
 import {
   ref,
-  get,
-  child
+  get
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const classSelect = document.getElementById("viewClass");
@@ -15,10 +14,13 @@ async function loadStudents() {
   const cls = classSelect.value;
   studentList.innerHTML = "";
 
-  if (!cls) return;
+  if (!cls) {
+    studentList.innerHTML = "<li>Select a class to view students</li>";
+    return;
+  }
 
   try {
-    const snapshot = await get(child(ref(db), "students/" + cls));
+    const snapshot = await get(ref(db, `students/${cls}`));
 
     if (!snapshot.exists()) {
       studentList.innerHTML = "<li>No students found</li>";
@@ -27,25 +29,25 @@ async function loadStudents() {
 
     const students = [];
 
-    snapshot.forEach(childSnap => {
+    snapshot.forEach(snap => {
       students.push({
-        id: childSnap.key,
-        ...childSnap.val()
+        roll: snap.key,
+        name: snap.val().name
       });
     });
 
-    // Sort by roll number
-    students.sort((a, b) => a.roll - b.roll);
+    // Sort by roll number (numeric safety)
+    students.sort((a, b) => Number(a.roll) - Number(b.roll));
 
     // Render students
     students.forEach(stu => {
       const li = document.createElement("li");
-      li.textContent = `Roll ${stu.roll} - ${stu.name}`;
+      li.textContent = `Roll ${stu.roll} – ${stu.name}`;
       studentList.appendChild(li);
     });
 
-  } catch (error) {
-    console.error("Error loading students:", error);
+  } catch (err) {
+    console.error(err);
     studentList.innerHTML = "<li>Error loading students</li>";
   }
 }
