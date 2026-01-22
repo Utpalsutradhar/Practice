@@ -1,4 +1,3 @@
-
 import { db } from "./firebase.js";
 import {
   ref,
@@ -16,6 +15,9 @@ const marksTable = document.getElementById("marksTable");
 const saveBtn = document.getElementById("saveBtn");
 const msg = document.getElementById("msg");
 
+const addSubjectBtn = document.getElementById("addSubjectBtn");
+const newSubjectNameInput = document.getElementById("newSubjectName");
+
 /* =======================
    STATE
 ======================= */
@@ -28,6 +30,7 @@ classSelect.addEventListener("change", onClassChange);
 examSelect.addEventListener("change", tryLoadMarks);
 subjectSelect.addEventListener("change", tryLoadMarks);
 saveBtn.addEventListener("click", saveMarks);
+addSubjectBtn.addEventListener("click", addSubject);
 
 /* =======================
    1️⃣ CLASS CHANGE
@@ -60,7 +63,7 @@ async function loadStudents(cls) {
     });
   });
 
-  students.sort((a, b) => a.roll - b.roll);
+  students.sort((a, b) => Number(a.roll) - Number(b.roll));
 }
 
 /* =======================
@@ -78,6 +81,44 @@ async function loadSubjects(cls) {
     opt.textContent = s.val();
     subjectSelect.appendChild(opt);
   });
+}
+
+/* =======================
+   ADD SUBJECT DYNAMICALLY
+======================= */
+async function addSubject() {
+  const cls = classSelect.value;
+  const subjectName = newSubjectNameInput.value.trim();
+
+  if (!cls) {
+    alert("Select class first");
+    return;
+  }
+
+  if (!subjectName) {
+    alert("Enter subject name");
+    return;
+  }
+
+  // Safe Firebase key
+  const subjectKey = subjectName
+    .toLowerCase()
+    .replace(/\s+/g, "");
+
+  const subjectPath = `subjects/${cls}/${subjectKey}`;
+
+  const exists = await get(ref(db, subjectPath));
+  if (exists.exists()) {
+    alert("Subject already exists");
+    return;
+  }
+
+  await set(ref(db, subjectPath), subjectName);
+
+  newSubjectNameInput.value = "";
+  await loadSubjects(cls);
+
+  msg.textContent = `✅ Subject "${subjectName}" added`;
 }
 
 /* =======================
@@ -102,7 +143,7 @@ function renderTable(existingMarks = {}) {
 }
 
 /* =======================
-   2️⃣ LOAD MARKS (IF EXIST)
+   LOAD MARKS (IF EXIST)
 ======================= */
 async function tryLoadMarks() {
   const cls = classSelect.value;
@@ -119,7 +160,7 @@ async function tryLoadMarks() {
 }
 
 /* =======================
-   3️⃣ SAVE MARKS (DYNAMIC)
+   SAVE MARKS (DYNAMIC)
 ======================= */
 async function saveMarks() {
   const cls = classSelect.value;
@@ -151,10 +192,7 @@ async function saveMarks() {
   const existing = await get(ref(db, path));
 
   if (existing.exists()) {
-    const confirmOverwrite = confirm(
-      "Marks already exist for this exam & subject.\nOverwrite?"
-    );
-    if (!confirmOverwrite) return;
+    if (!confirm("Marks already exist. Overwrite?")) return;
   }
 
   await set(ref(db, path), marksData);

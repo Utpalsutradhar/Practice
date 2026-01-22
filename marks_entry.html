@@ -45,10 +45,26 @@
       <label>Subject</label>
       <select id="subjectSelect">
         <option value="">Select Subject</option>
-        <!-- subjects will load dynamically -->
       </select>
     </div>
 
+  </div>
+
+  <!-- 🔥 ADD SUBJECT (NEW, REQUIRED) -->
+  <div class="controls">
+    <div class="control">
+      <label>Add New Subject</label>
+      <input
+        type="text"
+        id="newSubjectName"
+        placeholder="e.g. Mathematics"
+      >
+    </div>
+
+    <div class="control">
+      <label>&nbsp;</label>
+      <button id="addSubjectBtn">Add Subject</button>
+    </div>
   </div>
 
   <!-- MARKS TABLE -->
@@ -75,9 +91,8 @@
 
 </div>
 
-<!-- 🔥 MARKS ENTRY LOGIC (MUST BE HERE) -->
+<!-- 🔥 MARKS ENTRY LOGIC -->
 <script type="module" src="js/student.js"></script>
-
 
 </body>
 </html>
