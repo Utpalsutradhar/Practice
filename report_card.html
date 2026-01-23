@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Report Card</title>
+
+<style>
+@page { size: A4; margin: 15mm; }
+
+body {
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+}
+
+.school-header {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.school-header h2 {
+    font-size: 18px;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.school-header p {
+    margin: 0;
+    font-size: 11px;
+}
+
+.report-title {
+    text-align: center;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #000;
+    padding: 4px;
+    text-align: center;
+}
+
+.left { text-align: left; }
+</style>
+</head>
+
+<body>
+
+<div class="school-header">
+    <h2>NORTHEAST ENGLISH PUBLIC SCHOOL</h2>
+    <p>120E, Bejibari, Laluk, North Lakhimpur, Assam – 784160</p>
+    <p><strong>Based on CBSE Curriculum</strong></p>
+</div>
+
+<div class="report-title">
+    REPORT CARD FOR ACADEMIC SESSION : 2026–27
+</div>
+
+<table>
+<thead>
+<tr>
+    <th rowspan="3">Subject</th>
+    <th colspan="5">1st Semester</th>
+    <th colspan="5">2nd Semester</th>
+    <th rowspan="3">40%</th>
+    <th rowspan="3">60%</th>
+    <th rowspan="3">Total</th>
+    <th rowspan="3">Grade</th>
+</tr>
+<tr>
+    <th colspan="2">Internal</th>
+    <th colspan="2">Exam</th>
+    <th rowspan="2">100</th>
+
+    <th colspan="2">Internal</th>
+    <th colspan="2">Exam</th>
+    <th rowspan="2">100</th>
+</tr>
+<tr>
+    <th>20</th><th>Marks</th>
+    <th>80</th><th>Marks</th>
+
+    <th>20</th><th>Marks</th>
+    <th>80</th><th>Marks</th>
+</tr>
+</thead>
+
+<tbody id="marks-body"></tbody>
+</table>
+
+<script type="module" src="report_card.js"></script>
+</body>
+</html>
