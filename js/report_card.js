@@ -1,80 +1,113 @@
 import { ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { db } from "./firebase.js";
 
-/* =============================
-   CHANGE THESE VALUES
-   ============================= */
-const CLASS_NAME = "class_5";
-const ROLL_NO = "roll_12";
+const classSelect = document.getElementById("classSelect");
+const rollSelect  = document.getElementById("rollSelect");
+const tbody = document.getElementById("marks-body");
 
 /* =============================
-   MAIN LOADER
+   LOAD CLASSES FROM DATABASE
    ============================= */
-async function loadReportCard() {
-    const tbody = document.getElementById("marks-body");
+async function loadClasses() {
+    classSelect.innerHTML = `<option value="">Select Class</option>`;
+    rollSelect.innerHTML  = `<option value="">Select Roll</option>`;
     tbody.innerHTML = "";
 
-    try {
-        const subjectsRef = ref(db, `subjects/${CLASS_NAME}`);
-        const marksRef = ref(db, `marks/${CLASS_NAME}/${ROLL_NO}`);
+    const subjectsRef = ref(db, "subjects");
+    const snap = await get(subjectsRef);
 
-        const [subjectsSnap, marksSnap] = await Promise.all([
-            get(subjectsRef),
-            get(marksRef)
-        ]);
+    if (!snap.exists()) return;
 
-        if (!subjectsSnap.exists()) {
-            console.error("No subjects found");
-            return;
-        }
+    Object.keys(snap.val()).forEach(classKey => {
+        const opt = document.createElement("option");
+        opt.value = classKey;
+        opt.textContent = classKey.replace("class_", "Class ");
+        classSelect.appendChild(opt);
+    });
+}
 
-        const subjects = subjectsSnap.val();
-        const marks = marksSnap.exists() ? marksSnap.val() : {};
+/* =============================
+   LOAD ROLL NUMBERS
+   ============================= */
+async function loadRollNumbers(className) {
+    rollSelect.innerHTML = `<option value="">Select Roll</option>`;
+    tbody.innerHTML = "";
 
-        Object.values(subjects).forEach(sub => {
-            const subject = sub.name;
-            const m = marks[subject] || {};
+    if (!className) return;
 
-            const s1 = m.sem1 || {};
-            const s2 = m.sem2 || {};
+    const marksRef = ref(db, `marks/${className}`);
+    const snap = await get(marksRef);
 
-            const i1 = s1.internal1 ?? "";
-            const mt = s1.midterm ?? "";
-            const i2 = s2.internal2 ?? "";
-            const fe = s2.final ?? "";
+    if (!snap.exists()) return;
 
-            const sem1Total = (Number(i1) || 0) + (Number(mt) || 0) || "";
-            const sem2Total = (Number(i2) || 0) + (Number(fe) || 0) || "";
+    Object.keys(snap.val()).forEach(roll => {
+        const opt = document.createElement("option");
+        opt.value = roll;
+        opt.textContent = roll.replace("roll_", "Roll ");
+        rollSelect.appendChild(opt);
+    });
+}
 
-            const w40 = sem1Total !== "" ? Math.round(sem1Total * 0.4) : "";
-            const w60 = sem2Total !== "" ? Math.round(sem2Total * 0.6) : "";
-            const grand = w40 !== "" && w60 !== "" ? w40 + w60 : "";
+/* =============================
+   LOAD REPORT CARD
+   ============================= */
+async function loadReportCard(className, rollNo) {
+    tbody.innerHTML = "";
+    if (!className || !rollNo) return;
 
-            const grade = getGrade(grand);
+    const subjectsRef = ref(db, `subjects/${className}`);
+    const marksRef = ref(db, `marks/${className}/${rollNo}`);
 
-            tbody.insertAdjacentHTML("beforeend", `
-                <tr>
-                    <td class="left">${subject}</td>
+    const [subjectsSnap, marksSnap] = await Promise.all([
+        get(subjectsRef),
+        get(marksRef)
+    ]);
 
-                    <td>20</td><td>${i1}</td>
-                    <td>80</td><td>${mt}</td>
-                    <td>${sem1Total}</td>
+    if (!subjectsSnap.exists()) return;
 
-                    <td>20</td><td>${i2}</td>
-                    <td>80</td><td>${fe}</td>
-                    <td>${sem2Total}</td>
+    const subjects = subjectsSnap.val();
+    const marks = marksSnap.exists() ? marksSnap.val() : {};
 
-                    <td>${w40}</td>
-                    <td>${w60}</td>
-                    <td>${grand}</td>
-                    <td>${grade}</td>
-                </tr>
-            `);
-        });
+    Object.values(subjects).forEach(sub => {
+        const subject = sub.name;
+        const m = marks[subject] || {};
 
-    } catch (err) {
-        console.error("Report card load failed:", err);
-    }
+        const s1 = m.sem1 || {};
+        const s2 = m.sem2 || {};
+
+        const i1 = s1.internal1 ?? "";
+        const mt = s1.midterm ?? "";
+        const i2 = s2.internal2 ?? "";
+        const fe = s2.final ?? "";
+
+        const sem1Total = (Number(i1) || 0) + (Number(mt) || 0) || "";
+        const sem2Total = (Number(i2) || 0) + (Number(fe) || 0) || "";
+
+        const w40 = sem1Total !== "" ? Math.round(sem1Total * 0.4) : "";
+        const w60 = sem2Total !== "" ? Math.round(sem2Total * 0.6) : "";
+        const grand = w40 !== "" && w60 !== "" ? w40 + w60 : "";
+
+        const grade = getGrade(grand);
+
+        tbody.insertAdjacentHTML("beforeend", `
+            <tr>
+                <td class="left">${subject}</td>
+
+                <td>20</td><td>${i1}</td>
+                <td>80</td><td>${mt}</td>
+                <td>${sem1Total}</td>
+
+                <td>20</td><td>${i2}</td>
+                <td>80</td><td>${fe}</td>
+                <td>${sem2Total}</td>
+
+                <td>${w40}</td>
+                <td>${w60}</td>
+                <td>${grand}</td>
+                <td>${grade}</td>
+            </tr>
+        `);
+    });
 }
 
 /* =============================
@@ -89,4 +122,18 @@ function getGrade(total) {
     return "E";
 }
 
-window.addEventListener("DOMContentLoaded", loadReportCard);
+/* =============================
+   EVENTS
+   ============================= */
+classSelect.addEventListener("change", () => {
+    loadRollNumbers(classSelect.value);
+});
+
+rollSelect.addEventListener("change", () => {
+    loadReportCard(classSelect.value, rollSelect.value);
+});
+
+/* =============================
+   INIT
+   ============================= */
+loadClasses();
