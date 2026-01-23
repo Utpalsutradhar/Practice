@@ -1,3 +1,4 @@
+// reportcard.js
 import { ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { db } from "./firebase.js";
 
@@ -13,18 +14,28 @@ async function loadClasses() {
     rollSelect.innerHTML  = `<option value="">Select Roll</option>`;
     tbody.innerHTML = "";
 
-    const subjectsRef = ref(db, "subjects");
-    const snap = await get(subjectsRef);
+    try {
+        const subjectsRef = ref(db, "subjects");
+        const snap = await get(subjectsRef);
 
-    if (!snap.exists()) return;
+        if (!snap.exists()) return;
 
-    Object.keys(snap.val()).forEach(classKey => {
-        const opt = document.createElement("option");
-        opt.value = classKey;
-        opt.textContent = classKey.replace("class_", "Class ");
-        classSelect.appendChild(opt);
-    });
+        Object.keys(snap.val()).forEach(classKey => {
+            const opt = document.createElement("option");
+            opt.value = classKey;
+            opt.textContent = classKey.replace("class_", "Class ");
+            classSelect.appendChild(opt);
+        });
+    } catch (err) {
+        console.error("Failed to load classes:", err);
+    }
 }
+
+/* =============================
+   INIT
+   ============================= */
+window.addEventListener("DOMContentLoaded", loadClasses);
+
 
 /* =============================
    LOAD ROLL NUMBERS
