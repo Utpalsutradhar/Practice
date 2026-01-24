@@ -2,117 +2,86 @@
 import { ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { db } from "./firebase.js";
 
-const classSelect = document.getElementById("classSelect");
-const rollSelect  = document.getElementById("rollSelect");
-const tbody = document.getElementById("marks-body");
+const classSelect   = document.getElementById("classSelect");
+const studentSelect = document.getElementById("studentSelect");
+const tbody         = document.getElementById("marks-body");
 
-/* =============================
-   LOAD CLASSES FROM DATABASE
-   ============================= */
+/* =====================================================
+   1️⃣ LOAD CLASSES (from students node – source of truth)
+   ===================================================== */
 async function loadClasses() {
     classSelect.innerHTML = `<option value="">Select Class</option>`;
-    rollSelect.innerHTML  = `<option value="">Select Roll</option>`;
+    studentSelect.innerHTML = `<option value="">Select Student</option>`;
+    studentSelect.disabled = true;
     tbody.innerHTML = "";
 
-    try {
-        const subjectsRef = ref(db, "subjects");
-        const snap = await get(subjectsRef);
+    const snap = await get(ref(db, "students"));
+    if (!snap.exists()) return;
 
-        if (!snap.exists()) return;
-
-        Object.keys(snap.val()).forEach(classKey => {
-            const opt = document.createElement("option");
-            opt.value = classKey;
-            opt.textContent = classKey.replace("class_", "Class ");
-            classSelect.appendChild(opt);
-        });
-    } catch (err) {
-        console.error("Failed to load classes:", err);
-    }
-}
-
-/* =============================
-   INIT
-   ============================= */
-window.addEventListener("DOMContentLoaded", loadClasses);
-
-
-/* =============================
-   LOAD ROLL NUMBERS
-   ============================= */
-async function loadRollNumbers(className) {
-    console.log("🧪 loadRollNumbers called with:", className);
-
-    rollSelect.innerHTML = `<option value="">Select Roll</option>`;
-    tbody.innerHTML = "";
-
-    if (!className) {
-        console.warn("❌ No className passed");
-        return;
-    }
-
-    const studentsRef = ref(db, `students/${className}`);
-    const snap = await get(studentsRef);
-
-    console.log("🧪 students snapshot exists:", snap.exists());
-
-    if (!snap.exists()) {
-        console.warn("❌ No students at path:", `students/${className}`);
-        return;
-    }
-
-    const data = snap.val();
-    console.log("🧪 students raw data:", data);
-
-    Object.entries(data).forEach(([rollKey, student]) => {
-        console.log("➡ student:", rollKey, student);
-
+    Object.keys(snap.val()).forEach(classKey => {
         const opt = document.createElement("option");
-        opt.value = rollKey;
-        opt.textContent = rollKey + " - " + (student.name || "NO_NAME");
-        rollSelect.appendChild(opt);
+        opt.value = classKey;
+        opt.textContent = classKey.replace("class_", "Class ");
+        classSelect.appendChild(opt);
     });
 }
 
-
-
-
-/* =============================
-   LOAD REPORT CARD
-   ============================= */
-async function loadReportCard(className, rollNo) {
+/* =====================================================
+   2️⃣ LOAD STUDENTS (from students/class_x)
+   ===================================================== */
+async function loadStudents(className) {
+    studentSelect.innerHTML = `<option value="">Select Student</option>`;
+    studentSelect.disabled = true;
     tbody.innerHTML = "";
-    if (!className || !rollNo) return;
 
-    const subjectsRef = ref(db, `subjects/${className}`);
-    const marksRef = ref(db, `marks/${className}/${rollNo}`);
+    if (!className) return;
+
+    const snap = await get(ref(db, `students/${className}`));
+    if (!snap.exists()) return;
+
+    Object.entries(snap.val())
+        .sort((a, b) => a[1].roll - b[1].roll)
+        .forEach(([rollKey, student]) => {
+            const opt = document.createElement("option");
+            opt.value = rollKey;
+            opt.textContent = `Roll ${student.roll} – ${student.name}`;
+            studentSelect.appendChild(opt);
+        });
+
+    studentSelect.disabled = false;
+}
+
+/* =====================================================
+   3️⃣ LOAD REPORT CARD (subjects + marks)
+   ===================================================== */
+async function loadReportCard(className, rollKey) {
+    tbody.innerHTML = "";
+    if (!className || !rollKey) return;
 
     const [subjectsSnap, marksSnap] = await Promise.all([
-        get(subjectsRef),
-        get(marksRef)
+        get(ref(db, `subjects/${className}`)),
+        get(ref(db, `marks/${className}/${rollKey}`))
     ]);
 
     if (!subjectsSnap.exists()) return;
 
     const subjects = subjectsSnap.val();
-    const marks = marksSnap.exists() ? marksSnap.val() : {};
+    const marks    = marksSnap.exists() ? marksSnap.val() : {};
+
     Object.entries(subjects).forEach(([key, value]) => {
+        const subject =
+            typeof value === "string" ? value :
+            typeof value === "object" && value.name ? value.name :
+            key;
 
-    // Determine subject name safely
-    const subject =
-        typeof value === "string" ? value :
-        typeof value === "object" && value.name ? value.name :
-        key;
-
-    const m = marks[subject] || {};
-
+        const m  = marks[subject] || {};
         const s1 = m.sem1 || {};
         const s2 = m.sem2 || {};
 
         const i1 = s1.internal1 ?? "";
-        const mt = s1.midterm ?? "";
+        const mt = s1.midterm   ?? "";
         const i2 = s2.internal2 ?? "";
-        const fe = s2.final ?? "";
+        const fe = s2.final     ?? "";
 
         const sem1Total = (Number(i1) || 0) + (Number(mt) || 0) || "";
         const sem2Total = (Number(i2) || 0) + (Number(fe) || 0) || "";
@@ -120,8 +89,6 @@ async function loadReportCard(className, rollNo) {
         const w40 = sem1Total !== "" ? Math.round(sem1Total * 0.4) : "";
         const w60 = sem2Total !== "" ? Math.round(sem2Total * 0.6) : "";
         const grand = w40 !== "" && w60 !== "" ? w40 + w60 : "";
-
-        const grade = getGrade(grand);
 
         tbody.insertAdjacentHTML("beforeend", `
             <tr>
@@ -138,16 +105,16 @@ async function loadReportCard(className, rollNo) {
                 <td>${w40}</td>
                 <td>${w60}</td>
                 <td>${grand}</td>
-                <td>${grade}</td>
+                <td>${grade(grand)}</td>
             </tr>
         `);
     });
 }
 
-/* =============================
+/* =====================================================
    GRADE LOGIC
-   ============================= */
-function getGrade(total) {
+   ===================================================== */
+function grade(total) {
     if (total === "") return "";
     if (total >= 90) return "A";
     if (total >= 75) return "B";
@@ -156,18 +123,18 @@ function getGrade(total) {
     return "E";
 }
 
-/* =============================
+/* =====================================================
    EVENTS
-   ============================= */
+   ===================================================== */
 classSelect.addEventListener("change", () => {
-    loadRollNumbers(classSelect.value);
+    loadStudents(classSelect.value);
 });
 
-rollSelect.addEventListener("change", () => {
-    loadReportCard(classSelect.value, rollSelect.value);
+studentSelect.addEventListener("change", () => {
+    loadReportCard(classSelect.value, studentSelect.value);
 });
 
-/* =============================
+/* =====================================================
    INIT
-   ============================= */
-loadClasses();
+   ===================================================== */
+window.addEventListener("DOMContentLoaded", loadClasses);
