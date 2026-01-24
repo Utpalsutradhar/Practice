@@ -4,25 +4,39 @@ import { db } from "./firebase.js";
 
 console.log("✅ reportcard.js loaded");
 
+/* ===============================
+   DOM ELEMENTS
+   =============================== */
 const classSelect   = document.getElementById("classSelect");
 const studentSelect = document.getElementById("studentSelect");
 const tbody         = document.getElementById("marks-body");
+
+const displayName  = document.getElementById("displayName");
+const displayRoll  = document.getElementById("displayRoll");
+const displayClass = document.getElementById("displayClass");
+
+/* ===============================
+   CACHE
+   =============================== */
+let studentsCache = {};
 
 /* ===============================
    LOAD CLASSES
    =============================== */
 async function loadClasses() {
-    classSelect.innerHTML = `<option value="">Select Class</option>`;
+    classSelect.innerHTML   = `<option value="">Select Class</option>`;
     studentSelect.innerHTML = `<option value="">Select Student</option>`;
-    studentSelect.disabled = true;
-    tbody.innerHTML = "";
+    studentSelect.disabled  = true;
+    tbody.innerHTML         = "";
+
+    resetStudentInfo();
 
     const snap = await get(ref(db, "students"));
     if (!snap.exists()) return;
 
     Object.keys(snap.val()).forEach(classKey => {
         const opt = document.createElement("option");
-        opt.value = classKey;              // 🔑 DB KEY
+        opt.value = classKey;                 // DB KEY
         opt.textContent = classKey.replace("class", "Class ");
         classSelect.appendChild(opt);
     });
@@ -33,19 +47,24 @@ async function loadClasses() {
    =============================== */
 async function loadStudents(classKey) {
     studentSelect.innerHTML = `<option value="">Select Student</option>`;
-    studentSelect.disabled = true;
-    tbody.innerHTML = "";
+    studentSelect.disabled  = true;
+    tbody.innerHTML         = "";
+    resetStudentInfo();
 
     if (!classKey) return;
+
+    displayClass.textContent = classKey.replace("class", "Class ");
 
     const snap = await get(ref(db, `students/${classKey}`));
     if (!snap.exists()) return;
 
-    Object.entries(snap.val())
+    studentsCache = snap.val();
+
+    Object.entries(studentsCache)
         .sort((a, b) => a[1].roll - b[1].roll)
         .forEach(([rollKey, student]) => {
             const opt = document.createElement("option");
-            opt.value = rollKey;            // 🔑 DB KEY
+            opt.value = rollKey;            // DB KEY
             opt.textContent = `Roll ${student.roll} - ${student.name}`;
             studentSelect.appendChild(opt);
         });
@@ -60,6 +79,14 @@ async function loadReportCard(classKey, rollKey) {
     tbody.innerHTML = "";
     if (!classKey || !rollKey) return;
 
+    const student = studentsCache[rollKey];
+    if (!student) return;
+
+    // ✅ UPDATE STUDENT INFO TABLE
+    displayClass.textContent = classKey.replace("class", "Class ");
+    displayRoll.textContent  = student.roll;
+    displayName.textContent  = student.name.toUpperCase();
+
     const rollIndex = rollKey.replace("roll_", "");
 
     const subjectsSnap = await get(ref(db, `subjects/${classKey}`));
@@ -72,22 +99,15 @@ async function loadReportCard(classKey, rollKey) {
 
     Object.entries(subjects).forEach(([subjectKey, subjectValue]) => {
 
-        // 🔑 SUBJECT KEY (NO SPACES, EXACT DB KEY)
-        const dbSubjectKey = subjectKey;
-
-        // 👁 DISPLAY NAME (CAN HAVE SPACES)
-        const displayName =
+        const displaySubject =
             typeof subjectValue === "string"
                 ? subjectValue
-                : typeof subjectValue === "object" && subjectValue.name
-                    ? subjectValue.name
-                    : subjectKey;
+                : subjectValue?.name ?? subjectKey;
 
-        // ===== MARK LOOKUP =====
-        const i1 = marks.internal1?.[dbSubjectKey]?.[rollIndex] ?? "";
-        const mt = marks.midterm?.[dbSubjectKey]?.[rollIndex] ?? "";
-        const i2 = marks.internal2?.[dbSubjectKey]?.[rollIndex] ?? "";
-        const fe = marks.final?.[dbSubjectKey]?.[rollIndex] ?? "";
+        const i1 = marks.internal1?.[subjectKey]?.[rollIndex] ?? "";
+        const mt = marks.midterm?.[subjectKey]?.[rollIndex] ?? "";
+        const i2 = marks.internal2?.[subjectKey]?.[rollIndex] ?? "";
+        const fe = marks.final?.[subjectKey]?.[rollIndex] ?? "";
 
         const sem1Total = (Number(i1) || 0) + (Number(mt) || 0) || "";
         const sem2Total = (Number(i2) || 0) + (Number(fe) || 0) || "";
@@ -98,7 +118,7 @@ async function loadReportCard(classKey, rollKey) {
 
         tbody.insertAdjacentHTML("beforeend", `
             <tr>
-                <td class="left">${displayName}</td>
+                <td class="left">${displaySubject}</td>
 
                 <td>20</td><td>${i1}</td>
                 <td>80</td><td>${mt}</td>
@@ -115,6 +135,15 @@ async function loadReportCard(classKey, rollKey) {
             </tr>
         `);
     });
+}
+
+/* ===============================
+   RESET STUDENT INFO
+   =============================== */
+function resetStudentInfo() {
+    displayClass.textContent = "—";
+    displayRoll.textContent  = "—";
+    displayName.textContent  = "—";
 }
 
 /* ===============================
@@ -139,6 +168,14 @@ classSelect.addEventListener("change", () => {
 studentSelect.addEventListener("change", () => {
     loadReportCard(classSelect.value, studentSelect.value);
 });
+
+/* ===============================
+   PRINT
+   =============================== */
+window.printReport = function () {
+    document.body.classList.add("frozen");
+    window.print();
+};
 
 /* ===============================
    INIT
