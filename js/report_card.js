@@ -52,7 +52,8 @@ async function loadStudents(className) {
 }
 
 /* =====================================================
-   3️⃣ LOAD REPORT CARD (exam → subject → roll)
+   3️⃣ LOAD REPORT CARD
+   EXAM → SUBJECT(KEY) → ROLL
    ===================================================== */
 async function loadReportCard(className, rollKey) {
     tbody.innerHTML = "";
@@ -70,23 +71,26 @@ async function loadReportCard(className, rollKey) {
     const subjects = subjectsSnap.val();
     const marks    = marksSnap.val();
 
-    Object.entries(subjects).forEach(([key, value]) => {
+    Object.entries(subjects).forEach(([subjectKey, subjectValue]) => {
 
-        // Display name (can be improved later)
+        // 🔑 DB-safe subject key (NO SPACES, EXACT MATCH)
+        const dbSubjectKey = subjectKey.toLowerCase();
+
+        // 👁 Human-readable subject name (CAN HAVE SPACES)
         const displaySubject =
-            typeof value === "string" ? value :
-            typeof value === "object" && value.name ? value.name :
-            key;
+            typeof subjectValue === "string"
+                ? subjectValue
+                : typeof subjectValue === "object" && subjectValue.name
+                    ? subjectValue.name
+                    : subjectKey;
 
-        // 🔑 EXACT subject key as in DB (lowercase, no spaces)
-        const subjectKey = displaySubject.toLowerCase();
+        // ===== MARK LOOKUP =====
+        const i1 = marks.internal1?.[dbSubjectKey]?.[rollIndex] ?? "";
+        const mt = marks.midterm?.[dbSubjectKey]?.[rollIndex] ?? "";
+        const i2 = marks.internal2?.[dbSubjectKey]?.[rollIndex] ?? "";
+        const fe = marks.final?.[dbSubjectKey]?.[rollIndex] ?? "";
 
-        // Read marks: exam → subject → roll
-        const i1 = marks.internal1?.[subjectKey]?.[rollIndex] ?? "";
-        const mt = marks.midterm?.[subjectKey]?.[rollIndex] ?? "";
-        const i2 = marks.internal2?.[subjectKey]?.[rollIndex] ?? "";
-        const fe = marks.final?.[subjectKey]?.[rollIndex] ?? "";
-
+        // ===== TOTALS =====
         const sem1Total =
             (Number(i1) || 0) + (Number(mt) || 0) || "";
 
@@ -97,9 +101,10 @@ async function loadReportCard(className, rollKey) {
         const w60 = sem2Total !== "" ? Math.round(sem2Total * 0.6) : "";
         const grand = w40 !== "" && w60 !== "" ? w40 + w60 : "";
 
+        // ===== TABLE ROW =====
         tbody.insertAdjacentHTML("beforeend", `
             <tr>
-                <td class="left">${displaySubject.toUpperCase()}</td>
+                <td class="left">${displaySubject}</td>
 
                 <td>20</td><td>${i1}</td>
                 <td>80</td><td>${mt}</td>
