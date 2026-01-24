@@ -44,6 +44,20 @@ th, td {
     padding: 4px;
     text-align: center;
 }
+.header {
+    display: grid;
+    grid-template-columns: 60px auto 60px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.school-logo {
+    width: 55px;
+    height: 55px;
+    object-fit: contain;
+}
+
+
 
 .left { text-align: left; }
 </style>
@@ -51,11 +65,23 @@ th, td {
 
 <body>
 
-<div class="school-header">
-    <h2>NORTHEAST ENGLISH PUBLIC SCHOOL</h2>
-    <p>120E, Bejibari, Laluk, North Lakhimpur, Assam – 784160</p>
-    <p><strong>Based on CBSE Curriculum</strong></p>
+<div class="header">
+    <!-- LOGO -->
+    <div>
+        <img src="logo.jpeg" alt="School Logo" class="school-logo">
+    </div>
+
+    <!-- SCHOOL TEXT -->
+    <div class="center">
+        <div class="school-name">NORTHEAST ENGLISH PUBLIC SCHOOL</div>
+        <div class="subtext">120E, Bejibari, Laluk, North Lakhimpur, Assam – 784160</div>
+        <div class="subtext bold">Based on CBSE Curriculum</div>
+    </div>
+
+    <!-- EMPTY COLUMN (keeps center alignment perfect) -->
+    <div></div>
 </div>
+
 
 <div class="report-title">
     REPORT CARD FOR ACADEMIC SESSION : 2026–27
