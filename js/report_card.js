@@ -51,13 +51,21 @@ async function loadRollNumbers(className) {
 
     if (!snap.exists()) return;
 
-    Object.keys(snap.val()).forEach(roll => {
-        const opt = document.createElement("option");
-        opt.value = roll;
-        opt.textContent = roll.replace("roll_", "Roll ");
-        rollSelect.appendChild(opt);
-    });
+    Object.keys(snap.val())
+        .filter(key => key.startsWith("roll_"))   // 🔑 CRITICAL FILTER
+        .sort((a, b) => {
+            const n1 = parseInt(a.replace("roll_", ""));
+            const n2 = parseInt(b.replace("roll_", ""));
+            return n1 - n2;
+        })
+        .forEach(roll => {
+            const opt = document.createElement("option");
+            opt.value = roll;
+            opt.textContent = roll.replace("roll_", "Roll ");
+            rollSelect.appendChild(opt);
+        });
 }
+
 
 /* =============================
    LOAD REPORT CARD
@@ -78,10 +86,15 @@ async function loadReportCard(className, rollNo) {
 
     const subjects = subjectsSnap.val();
     const marks = marksSnap.exists() ? marksSnap.val() : {};
+    Object.entries(subjects).forEach(([key, value]) => {
 
-    Object.values(subjects).forEach(sub => {
-        const subject = sub.name;
-        const m = marks[subject] || {};
+    // Determine subject name safely
+    const subject =
+        typeof value === "string" ? value :
+        typeof value === "object" && value.name ? value.name :
+        key;
+
+    const m = marks[subject] || {};
 
         const s1 = m.sem1 || {};
         const s2 = m.sem2 || {};
