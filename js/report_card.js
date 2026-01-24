@@ -46,25 +46,31 @@ async function loadRollNumbers(className) {
 
     if (!className) return;
 
-    const marksRef = ref(db, `marks/${className}`);
-    const snap = await get(marksRef);
+    const studentsRef = ref(db, `students/${className}`);
+    const snap = await get(studentsRef);
 
-    if (!snap.exists()) return;
+    if (!snap.exists()) {
+        console.warn("No students found for", className);
+        return;
+    }
 
-    Object.keys(snap.val())
-        .filter(key => key.startsWith("roll_"))   // 🔑 CRITICAL FILTER
+    Object.entries(snap.val())
         .sort((a, b) => {
-            const n1 = parseInt(a.replace("roll_", ""));
-            const n2 = parseInt(b.replace("roll_", ""));
+            const n1 = parseInt(a[0].replace("roll_", ""));
+            const n2 = parseInt(b[0].replace("roll_", ""));
             return n1 - n2;
         })
-        .forEach(roll => {
+        .forEach(([rollKey, student]) => {
             const opt = document.createElement("option");
-            opt.value = roll;
-            opt.textContent = roll.replace("roll_", "Roll ");
+            opt.value = rollKey;
+
+            // Show Roll + Name (BEST UX)
+            opt.textContent = `Roll ${student.roll} - ${student.name}`;
+
             rollSelect.appendChild(opt);
         });
 }
+
 
 
 /* =============================
