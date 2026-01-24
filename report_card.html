@@ -69,6 +69,46 @@ th, td {
     font-weight: bold;
     letter-spacing: 1px;
 }
+
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin: 8px 0 12px 0;
+    font-size: 10px;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-group label {
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.filter-group select {
+    font-size: 10px;
+    padding: 2px 4px;
+    min-width: 140px;
+}
+
+/* Print-safe */
+@media print {
+    .filter-row {
+        gap: 30px;
+        margin-bottom: 10px;
+    }
+
+    .filter-group select {
+        border: 1px solid #000;
+    }
+}
+
+
+
 </style>
 </head>
 
@@ -95,23 +135,22 @@ th, td {
 <div class="report-title">
     REPORT CARD FOR ACADEMIC SESSION : 2026–27
 </div>
-<div style="margin-bottom:10px;">
-    <label>
-        Class:
+<div class="filter-row">
+    <div class="filter-group">
+        <label for="classSelect">Class:</label>
         <select id="classSelect">
             <option value="">Select Class</option>
         </select>
-    </label>
+    </div>
 
-    &nbsp;&nbsp;
-
-    <label>
-        Student:
+    <div class="filter-group">
+        <label for="studentSelect">Student:</label>
         <select id="studentSelect" disabled>
             <option value="">Select Student</option>
         </select>
-    </label>
+    </div>
 </div>
+
 
 <table>
 <thead>
