@@ -1,4 +1,4 @@
-// reportcard.js
+// report_card.js
 import { ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { db } from "./firebase.js";
 
@@ -7,7 +7,7 @@ const studentSelect = document.getElementById("studentSelect");
 const tbody         = document.getElementById("marks-body");
 
 /* =====================================================
-   1️⃣ LOAD CLASSES (from students node – source of truth)
+   1️⃣ LOAD CLASSES (from students node)
    ===================================================== */
 async function loadClasses() {
     classSelect.innerHTML = `<option value="">Select Class</option>`;
@@ -21,13 +21,13 @@ async function loadClasses() {
     Object.keys(snap.val()).forEach(classKey => {
         const opt = document.createElement("option");
         opt.value = classKey;
-        opt.textContent = classKey.replace("class_", "Class ");
+        opt.textContent = classKey.replace("class", "Class ");
         classSelect.appendChild(opt);
     });
 }
 
 /* =====================================================
-   2️⃣ LOAD STUDENTS (from students/class_x)
+   2️⃣ LOAD STUDENTS (from students/classX)
    ===================================================== */
 async function loadStudents(className) {
     studentSelect.innerHTML = `<option value="">Select Student</option>`;
@@ -44,7 +44,7 @@ async function loadStudents(className) {
         .forEach(([rollKey, student]) => {
             const opt = document.createElement("option");
             opt.value = rollKey;
-            opt.textContent = `Roll ${student.roll} – ${student.name}`;
+            opt.textContent = `Roll ${student.roll} - ${student.name}`;
             studentSelect.appendChild(opt);
         });
 
@@ -52,13 +52,13 @@ async function loadStudents(className) {
 }
 
 /* =====================================================
-   3️⃣ LOAD REPORT CARD (subjects + marks)
+   3️⃣ LOAD REPORT CARD (exam → subject → roll)
    ===================================================== */
 async function loadReportCard(className, rollKey) {
     tbody.innerHTML = "";
     if (!className || !rollKey) return;
 
-    const rollIndex = rollKey.replace("roll_", ""); // safety if roll_1 used
+    const rollIndex = rollKey.replace("roll_", "");
 
     const [subjectsSnap, marksSnap] = await Promise.all([
         get(ref(db, `subjects/${className}`)),
@@ -72,16 +72,20 @@ async function loadReportCard(className, rollKey) {
 
     Object.entries(subjects).forEach(([key, value]) => {
 
-        const subject =
-            typeof value === "string" ? value.toLowerCase() :
-            typeof value === "object" && value.name ? value.name.toLowerCase() :
-            key.toLowerCase();
+        // Display name (can be improved later)
+        const displaySubject =
+            typeof value === "string" ? value :
+            typeof value === "object" && value.name ? value.name :
+            key;
 
-        // 🔥 READ MARKS FROM EXAM → SUBJECT → ROLL
-        const i1 = marks.internal1?.[subject]?.[rollIndex] ?? "";
-        const mt = marks.midterm?.[subject]?.[rollIndex] ?? "";
-        const i2 = marks.internal2?.[subject]?.[rollIndex] ?? "";
-        const fe = marks.final?.[subject]?.[rollIndex] ?? "";
+        // 🔑 EXACT subject key as in DB (lowercase, no spaces)
+        const subjectKey = displaySubject.toLowerCase();
+
+        // Read marks: exam → subject → roll
+        const i1 = marks.internal1?.[subjectKey]?.[rollIndex] ?? "";
+        const mt = marks.midterm?.[subjectKey]?.[rollIndex] ?? "";
+        const i2 = marks.internal2?.[subjectKey]?.[rollIndex] ?? "";
+        const fe = marks.final?.[subjectKey]?.[rollIndex] ?? "";
 
         const sem1Total =
             (Number(i1) || 0) + (Number(mt) || 0) || "";
@@ -95,7 +99,7 @@ async function loadReportCard(className, rollKey) {
 
         tbody.insertAdjacentHTML("beforeend", `
             <tr>
-                <td class="left">${subject.toUpperCase()}</td>
+                <td class="left">${displaySubject.toUpperCase()}</td>
 
                 <td>20</td><td>${i1}</td>
                 <td>80</td><td>${mt}</td>
@@ -113,7 +117,6 @@ async function loadReportCard(className, rollKey) {
         `);
     });
 }
-
 
 /* =====================================================
    GRADE LOGIC
