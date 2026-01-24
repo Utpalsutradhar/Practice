@@ -2,13 +2,15 @@
 import { ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { db } from "./firebase.js";
 
+console.log("✅ reportcard.js loaded");
+
 const classSelect   = document.getElementById("classSelect");
 const studentSelect = document.getElementById("studentSelect");
 const tbody         = document.getElementById("marks-body");
 
-/* =====================================================
+/* ===============================
    LOAD CLASSES
-   ===================================================== */
+   =============================== */
 async function loadClasses() {
     classSelect.innerHTML = `<option value="">Select Class</option>`;
     studentSelect.innerHTML = `<option value="">Select Student</option>`;
@@ -20,30 +22,30 @@ async function loadClasses() {
 
     Object.keys(snap.val()).forEach(classKey => {
         const opt = document.createElement("option");
-        opt.value = classKey;
-        opt.textContent = classKey.replace("class_", "Class ");
+        opt.value = classKey;              // 🔑 DB KEY
+        opt.textContent = classKey.replace("class", "Class ");
         classSelect.appendChild(opt);
     });
 }
 
-/* =====================================================
+/* ===============================
    LOAD STUDENTS
-   ===================================================== */
-async function loadStudents(className) {
+   =============================== */
+async function loadStudents(classKey) {
     studentSelect.innerHTML = `<option value="">Select Student</option>`;
     studentSelect.disabled = true;
     tbody.innerHTML = "";
 
-    if (!className) return;
+    if (!classKey) return;
 
-    const snap = await get(ref(db, `students/${className}`));
+    const snap = await get(ref(db, `students/${classKey}`));
     if (!snap.exists()) return;
 
     Object.entries(snap.val())
         .sort((a, b) => a[1].roll - b[1].roll)
         .forEach(([rollKey, student]) => {
             const opt = document.createElement("option");
-            opt.value = rollKey;
+            opt.value = rollKey;            // 🔑 DB KEY
             opt.textContent = `Roll ${student.roll} - ${student.name}`;
             studentSelect.appendChild(opt);
         });
@@ -51,19 +53,17 @@ async function loadStudents(className) {
     studentSelect.disabled = false;
 }
 
-/* =====================================================
-   LOAD REPORT CARD (CORRECT VERSION)
-   ===================================================== */
-async function loadReportCard(className, rollKey) {
+/* ===============================
+   LOAD REPORT CARD
+   =============================== */
+async function loadReportCard(classKey, rollKey) {
     tbody.innerHTML = "";
-    if (!className || !rollKey) return;
+    if (!classKey || !rollKey) return;
 
     const rollIndex = rollKey.replace("roll_", "");
 
-    const [subjectsSnap, marksSnap] = await Promise.all([
-        get(ref(db, `subjects/${className}`)),
-        get(ref(db, `marks/${className}`))
-    ]);
+    const subjectsSnap = await get(ref(db, `subjects/${classKey}`));
+    const marksSnap    = await get(ref(db, `marks/${classKey}`));
 
     if (!subjectsSnap.exists() || !marksSnap.exists()) return;
 
@@ -72,10 +72,10 @@ async function loadReportCard(className, rollKey) {
 
     Object.entries(subjects).forEach(([subjectKey, subjectValue]) => {
 
-        // ✅ DB key (NO SPACES)
-        const dbKey = subjectKey;
+        // 🔑 SUBJECT KEY (NO SPACES, EXACT DB KEY)
+        const dbSubjectKey = subjectKey;
 
-        // ✅ Display name (CAN HAVE SPACES)
+        // 👁 DISPLAY NAME (CAN HAVE SPACES)
         const displayName =
             typeof subjectValue === "string"
                 ? subjectValue
@@ -84,10 +84,10 @@ async function loadReportCard(className, rollKey) {
                     : subjectKey;
 
         // ===== MARK LOOKUP =====
-        const i1 = marks.internal1?.[dbKey]?.[rollIndex] ?? "";
-        const mt = marks.midterm?.[dbKey]?.[rollIndex] ?? "";
-        const i2 = marks.internal2?.[dbKey]?.[rollIndex] ?? "";
-        const fe = marks.final?.[dbKey]?.[rollIndex] ?? "";
+        const i1 = marks.internal1?.[dbSubjectKey]?.[rollIndex] ?? "";
+        const mt = marks.midterm?.[dbSubjectKey]?.[rollIndex] ?? "";
+        const i2 = marks.internal2?.[dbSubjectKey]?.[rollIndex] ?? "";
+        const fe = marks.final?.[dbSubjectKey]?.[rollIndex] ?? "";
 
         const sem1Total = (Number(i1) || 0) + (Number(mt) || 0) || "";
         const sem2Total = (Number(i2) || 0) + (Number(fe) || 0) || "";
@@ -117,9 +117,9 @@ async function loadReportCard(className, rollKey) {
     });
 }
 
-/* =====================================================
+/* ===============================
    GRADE LOGIC
-   ===================================================== */
+   =============================== */
 function grade(total) {
     if (total === "") return "";
     if (total >= 90) return "A";
@@ -129,9 +129,9 @@ function grade(total) {
     return "E";
 }
 
-/* =====================================================
+/* ===============================
    EVENTS
-   ===================================================== */
+   =============================== */
 classSelect.addEventListener("change", () => {
     loadStudents(classSelect.value);
 });
@@ -140,7 +140,7 @@ studentSelect.addEventListener("change", () => {
     loadReportCard(classSelect.value, studentSelect.value);
 });
 
-/* =====================================================
+/* ===============================
    INIT
-   ===================================================== */
+   =============================== */
 window.addEventListener("DOMContentLoaded", loadClasses);
