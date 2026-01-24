@@ -5,12 +5,6 @@ import { db } from "./firebase.js";
 const classSelect   = document.getElementById("classSelect");
 const studentSelect = document.getElementById("studentSelect");
 const tbody         = document.getElementById("marks-body");
-const SUBJECT_ALIAS = {
-    englishgrammar: "english2",
-    englishliterature: "english",
-    computerscience: "computer",
-    socialstudies: "social"
-};
 
 /* =====================================================
    1️⃣ LOAD CLASSES (from students node – source of truth)
@@ -84,15 +78,10 @@ async function loadReportCard(className, rollKey) {
             key.toLowerCase();
 
         // 🔥 READ MARKS FROM EXAM → SUBJECT → ROLL
-
-    
-        const lookupKey = SUBJECT_ALIAS[subjectKey] || subjectKey;
-
-        const i1 = marks.internal1?.[lookupKey]?.[rollIndex] ?? "";
-        const mt = marks.midterm?.[lookupKey]?.[rollIndex] ?? "";
-        const i2 = marks.internal2?.[lookupKey]?.[rollIndex] ?? "";
-        const fe = marks.final?.[lookupKey]?.[rollIndex] ?? "";
-
+        const i1 = marks.internal1?.[subject]?.[rollIndex] ?? "";
+        const mt = marks.midterm?.[subject]?.[rollIndex] ?? "";
+        const i2 = marks.internal2?.[subject]?.[rollIndex] ?? "";
+        const fe = marks.final?.[subject]?.[rollIndex] ?? "";
 
         const sem1Total =
             (Number(i1) || 0) + (Number(mt) || 0) || "";
