@@ -41,35 +41,39 @@ window.addEventListener("DOMContentLoaded", loadClasses);
    LOAD ROLL NUMBERS
    ============================= */
 async function loadRollNumbers(className) {
+    console.log("🧪 loadRollNumbers called with:", className);
+
     rollSelect.innerHTML = `<option value="">Select Roll</option>`;
     tbody.innerHTML = "";
 
-    if (!className) return;
+    if (!className) {
+        console.warn("❌ No className passed");
+        return;
+    }
 
     const studentsRef = ref(db, `students/${className}`);
     const snap = await get(studentsRef);
 
+    console.log("🧪 students snapshot exists:", snap.exists());
+
     if (!snap.exists()) {
-        console.warn("No students found for", className);
+        console.warn("❌ No students at path:", `students/${className}`);
         return;
     }
 
-    Object.entries(snap.val())
-        .sort((a, b) => {
-            const n1 = parseInt(a[0].replace("roll_", ""));
-            const n2 = parseInt(b[0].replace("roll_", ""));
-            return n1 - n2;
-        })
-        .forEach(([rollKey, student]) => {
-            const opt = document.createElement("option");
-            opt.value = rollKey;
+    const data = snap.val();
+    console.log("🧪 students raw data:", data);
 
-            // Show Roll + Name (BEST UX)
-            opt.textContent = `Roll ${student.roll} - ${student.name}`;
+    Object.entries(data).forEach(([rollKey, student]) => {
+        console.log("➡ student:", rollKey, student);
 
-            rollSelect.appendChild(opt);
-        });
+        const opt = document.createElement("option");
+        opt.value = rollKey;
+        opt.textContent = rollKey + " - " + (student.name || "NO_NAME");
+        rollSelect.appendChild(opt);
+    });
 }
+
 
 
 
