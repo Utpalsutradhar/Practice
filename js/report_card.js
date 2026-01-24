@@ -73,55 +73,49 @@ async function loadReportCard(className, rollKey) {
 
     Object.entries(subjects).forEach(([subjectKey, subjectValue]) => {
 
-        // 🔑 DB-safe subject key (NO SPACES, EXACT MATCH)
-        const dbSubjectKey = subjectKey.toLowerCase();
+    // 1️⃣ Database-safe key (NO SPACES)
+    const dbKey = subjectKey;  
 
-        // 👁 Human-readable subject name (CAN HAVE SPACES)
-        const displaySubject =
-            typeof subjectValue === "string"
-                ? subjectValue
-                : typeof subjectValue === "object" && subjectValue.name
-                    ? subjectValue.name
-                    : subjectKey;
+    // 2️⃣ Human-readable name (CAN HAVE SPACES)
+    const displayName =
+        typeof subjectValue === "string"
+            ? subjectValue
+            : typeof subjectValue === "object" && subjectValue.name
+                ? subjectValue.name
+                : subjectKey;
 
-        // ===== MARK LOOKUP =====
-        const i1 = marks.internal1?.[dbSubjectKey]?.[rollIndex] ?? "";
-        const mt = marks.midterm?.[dbSubjectKey]?.[rollIndex] ?? "";
-        const i2 = marks.internal2?.[dbSubjectKey]?.[rollIndex] ?? "";
-        const fe = marks.final?.[dbSubjectKey]?.[rollIndex] ?? "";
+    // 3️⃣ Read marks using DB KEY ONLY
+    const i1 = marks.internal1?.[dbKey]?.[rollIndex] ?? "";
+    const mt = marks.midterm?.[dbKey]?.[rollIndex] ?? "";
+    const i2 = marks.internal2?.[dbKey]?.[rollIndex] ?? "";
+    const fe = marks.final?.[dbKey]?.[rollIndex] ?? "";
 
-        // ===== TOTALS =====
-        const sem1Total =
-            (Number(i1) || 0) + (Number(mt) || 0) || "";
+    const sem1Total = (Number(i1) || 0) + (Number(mt) || 0) || "";
+    const sem2Total = (Number(i2) || 0) + (Number(fe) || 0) || "";
 
-        const sem2Total =
-            (Number(i2) || 0) + (Number(fe) || 0) || "";
+    const w40 = sem1Total !== "" ? Math.round(sem1Total * 0.4) : "";
+    const w60 = sem2Total !== "" ? Math.round(sem2Total * 0.6) : "";
+    const grand = w40 !== "" && w60 !== "" ? w40 + w60 : "";
 
-        const w40 = sem1Total !== "" ? Math.round(sem1Total * 0.4) : "";
-        const w60 = sem2Total !== "" ? Math.round(sem2Total * 0.6) : "";
-        const grand = w40 !== "" && w60 !== "" ? w40 + w60 : "";
+    tbody.insertAdjacentHTML("beforeend", `
+        <tr>
+            <td class="left">${displayName}</td>
 
-        // ===== TABLE ROW =====
-        tbody.insertAdjacentHTML("beforeend", `
-            <tr>
-                <td class="left">${displaySubject}</td>
+            <td>20</td><td>${i1}</td>
+            <td>80</td><td>${mt}</td>
+            <td>${sem1Total}</td>
 
-                <td>20</td><td>${i1}</td>
-                <td>80</td><td>${mt}</td>
-                <td>${sem1Total}</td>
+            <td>20</td><td>${i2}</td>
+            <td>80</td><td>${fe}</td>
+            <td>${sem2Total}</td>
 
-                <td>20</td><td>${i2}</td>
-                <td>80</td><td>${fe}</td>
-                <td>${sem2Total}</td>
-
-                <td>${w40}</td>
-                <td>${w60}</td>
-                <td>${grand}</td>
-                <td>${grade(grand)}</td>
-            </tr>
-        `);
-    });
-}
+            <td>${w40}</td>
+            <td>${w60}</td>
+            <td>${grand}</td>
+            <td>${grade(grand)}</td>
+        </tr>
+    `);
+});
 
 /* =====================================================
    GRADE LOGIC
