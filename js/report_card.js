@@ -7,7 +7,7 @@ const studentSelect = document.getElementById("studentSelect");
 const tbody         = document.getElementById("marks-body");
 
 /* =====================================================
-   1️⃣ LOAD CLASSES (from students node – source of truth)
+   LOAD CLASSES
    ===================================================== */
 async function loadClasses() {
     classSelect.innerHTML = `<option value="">Select Class</option>`;
@@ -27,7 +27,7 @@ async function loadClasses() {
 }
 
 /* =====================================================
-   2️⃣ LOAD STUDENTS (from students/class_x)
+   LOAD STUDENTS
    ===================================================== */
 async function loadStudents(className) {
     studentSelect.innerHTML = `<option value="">Select Student</option>`;
@@ -44,7 +44,7 @@ async function loadStudents(className) {
         .forEach(([rollKey, student]) => {
             const opt = document.createElement("option");
             opt.value = rollKey;
-            opt.textContent = `Roll ${student.roll} – ${student.name}`;
+            opt.textContent = `Roll ${student.roll} - ${student.name}`;
             studentSelect.appendChild(opt);
         });
 
@@ -52,13 +52,13 @@ async function loadStudents(className) {
 }
 
 /* =====================================================
-   3️⃣ LOAD REPORT CARD (subjects + marks)
+   LOAD REPORT CARD (CORRECT VERSION)
    ===================================================== */
 async function loadReportCard(className, rollKey) {
     tbody.innerHTML = "";
     if (!className || !rollKey) return;
 
-    const rollIndex = rollKey.replace("roll_", ""); // safety if roll_1 used
+    const rollIndex = rollKey.replace("roll_", "");
 
     const [subjectsSnap, marksSnap] = await Promise.all([
         get(ref(db, `subjects/${className}`)),
@@ -70,24 +70,27 @@ async function loadReportCard(className, rollKey) {
     const subjects = subjectsSnap.val();
     const marks    = marksSnap.val();
 
-    Object.entries(subjects).forEach(([key, value]) => {
+    Object.entries(subjects).forEach(([subjectKey, subjectValue]) => {
 
-        const subject =
-            typeof value === "string" ? value.toLowerCase() :
-            typeof value === "object" && value.name ? value.name.toLowerCase() :
-            key.toLowerCase();
+        // ✅ DB key (NO SPACES)
+        const dbKey = subjectKey;
 
-        // 🔥 READ MARKS FROM EXAM → SUBJECT → ROLL
-        const i1 = marks.internal1?.[subject]?.[rollIndex] ?? "";
-        const mt = marks.midterm?.[subject]?.[rollIndex] ?? "";
-        const i2 = marks.internal2?.[subject]?.[rollIndex] ?? "";
-        const fe = marks.final?.[subject]?.[rollIndex] ?? "";
+        // ✅ Display name (CAN HAVE SPACES)
+        const displayName =
+            typeof subjectValue === "string"
+                ? subjectValue
+                : typeof subjectValue === "object" && subjectValue.name
+                    ? subjectValue.name
+                    : subjectKey;
 
-        const sem1Total =
-            (Number(i1) || 0) + (Number(mt) || 0) || "";
+        // ===== MARK LOOKUP =====
+        const i1 = marks.internal1?.[dbKey]?.[rollIndex] ?? "";
+        const mt = marks.midterm?.[dbKey]?.[rollIndex] ?? "";
+        const i2 = marks.internal2?.[dbKey]?.[rollIndex] ?? "";
+        const fe = marks.final?.[dbKey]?.[rollIndex] ?? "";
 
-        const sem2Total =
-            (Number(i2) || 0) + (Number(fe) || 0) || "";
+        const sem1Total = (Number(i1) || 0) + (Number(mt) || 0) || "";
+        const sem2Total = (Number(i2) || 0) + (Number(fe) || 0) || "";
 
         const w40 = sem1Total !== "" ? Math.round(sem1Total * 0.4) : "";
         const w60 = sem2Total !== "" ? Math.round(sem2Total * 0.6) : "";
@@ -95,7 +98,7 @@ async function loadReportCard(className, rollKey) {
 
         tbody.insertAdjacentHTML("beforeend", `
             <tr>
-                <td class="left">${subject.toUpperCase()}</td>
+                <td class="left">${displayName}</td>
 
                 <td>20</td><td>${i1}</td>
                 <td>80</td><td>${mt}</td>
@@ -113,7 +116,6 @@ async function loadReportCard(className, rollKey) {
         `);
     });
 }
-
 
 /* =====================================================
    GRADE LOGIC
