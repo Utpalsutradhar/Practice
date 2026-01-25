@@ -8,73 +8,61 @@
 
 <body>
 
+<!-- ================= HEADER ================= -->
 <div class="header">
-    <!-- LOGO -->
     <div>
-        <img src="./images/logo.jpeg" alt="School Logo" class="school-logo">
+        <img src="./images/logo.jpeg" class="school-logo">
     </div>
 
-    <!-- SCHOOL TEXT -->
     <div class="center">
         <div class="school-name">NORTHEAST ENGLISH PUBLIC SCHOOL</div>
         <div class="subtext">120E, Bejibari, Laluk, North Lakhimpur, Assam – 784160</div>
         <div class="subtext bold">Based on CBSE Curriculum</div>
     </div>
 
-    <!-- EMPTY COLUMN (keeps center alignment perfect) -->
     <div></div>
 </div>
 
-<!-- ================= REPORT TITLE ================= -->
 <div class="report-title">
     REPORT CARD FOR ACADEMIC SESSION : 2026–27
 </div>
 
-<!-- ================= STUDENT INFO (DISPLAY ONLY) ================= -->
+<!-- ================= STUDENT INFO ================= -->
 <table class="student-info">
-    <tr>
-        <td><b>Class</b></td>
-        <td id="displayClass">—</td>
-
-        <td><b>Roll No</b></td>
-        <td id="displayRoll">—</td>
-    </tr>
-    <tr>
-        <td><b>Student Name</b></td>
-        <td colspan="3" class="student-name" id="displayName">—</td>
-    </tr>
+<tr>
+    <td><b>Class</b></td>
+    <td id="displayClass">—</td>
+    <td><b>Roll No</b></td>
+    <td id="displayRoll">—</td>
+</tr>
+<tr>
+    <td><b>Student Name</b></td>
+    <td colspan="3" id="displayName">—</td>
+</tr>
 </table>
 
-<!-- ================= FILTERS (CONTROL ONLY) ================= -->
-<div class="filter-row">
-    <div class="filter-group">
-        <label for="classSelect">Class:</label>
-        <select id="classSelect">
-            <option value="">Select Class</option>
-        </select>
-    </div>
+<!-- ================= CONTROLS ================= -->
+<div class="filter-row no-print">
+    <label>Class:</label>
+    <select id="classSelect">
+        <option value="">Select Class</option>
+    </select>
 
-    <div class="filter-group">
-        <label for="studentSelect">Student:</label>
-        <select id="studentSelect" disabled>
-            <option value="">Select Student</option>
-        </select>
-    </div>
+    <label>Student:</label>
+    <select id="studentSelect" disabled>
+        <option value="">Select Student</option>
+    </select>
 
-    <div class="print-row">
-        <button id="printBtn" onclick="printReport()">Print / Save PDF</button>
-    </div>
+    <button onclick="printReport()">Print / PDF</button>
 </div>
 
-
-
-
+<!-- ================= MARKS ================= -->
 <table>
 <thead>
 <tr>
     <th rowspan="3">Subject</th>
-    <th colspan="5">1st Semester</th>
-    <th colspan="5">2nd Semester</th>
+    <th colspan="5">Semester I</th>
+    <th colspan="5">Semester II</th>
     <th rowspan="3">40%</th>
     <th rowspan="3">60%</th>
     <th rowspan="3">Total</th>
@@ -84,7 +72,6 @@
     <th colspan="2">Internal</th>
     <th colspan="2">Exam</th>
     <th rowspan="2">100</th>
-
     <th colspan="2">Internal</th>
     <th colspan="2">Exam</th>
     <th rowspan="2">100</th>
@@ -92,7 +79,6 @@
 <tr>
     <th>20</th><th>Marks</th>
     <th>80</th><th>Marks</th>
-
     <th>20</th><th>Marks</th>
     <th>80</th><th>Marks</th>
 </tr>
@@ -103,41 +89,38 @@
 
 <table>
 <tr>
-    <td class="left bold">OVERALL TOTAL</td>
-    <td width="20%"></td>
-    <td class="left bold">PERCENTAGE</td>
-    <td width="20%"></td>
+    <td><b>OVERALL TOTAL</b></td>
+    <td id="overallTotal">—</td>
+    <td><b>PERCENTAGE</b></td>
+    <td id="percentage">—</td>
 </tr>
 </table>
 
 <!-- ================= ATTENDANCE ================= -->
-<div class="section-title">Attendance</div>
+<h3>Attendance</h3>
 <table>
-<tr>
-    <th>Semester</th>
-    <th>Total Working Days</th>
-    <th>Total Attendance</th>
-</tr>
+<tr><th>Semester</th><th>Working Days</th><th>Present</th></tr>
 <tr>
     <td>Semester I</td>
-    <td></td>
-    <td></td>
+    <td id="attSem1Work">—</td>
+    <td id="attSem1Present">—</td>
 </tr>
 <tr>
     <td>Semester II</td>
-    <td></td>
-    <td></td>
+    <td id="attSem2Work">—</td>
+    <td id="attSem2Present">—</td>
 </tr>
 </table>
 
 <!-- ================= CO-SCHOLASTIC ================= -->
-<div class="section-title">Co-Scholastic Areas (A–D)</div>
+<h3>Co-Scholastic (A–D)</h3>
 <table>
-<tr><td class="left">Confidence</td><td></td></tr>
-<tr><td class="left">Uniform</td><td></td></tr>
-<tr><td class="left">Discipline</td><td></td></tr>
-<tr><td class="left">Spoken English</td><td></td></tr>
-<tr><td class="left">Regularity & Punctuality</td><td></td></tr>
+<tr><td>Confidence</td><td id="csConfidence">—</td></tr>
+<tr><td>Uniform</td><td id="csUniform">—</td></tr>
+<tr><td>Discipline</td><td id="csDiscipline">—</td></tr>
+<tr><td>Spoken English</td><td id="csSpoken">—</td></tr>
+<tr><td>Regularity & Punctuality</td><td id="csPunctuality">—</td></tr>
+<tr><td>SUPW</td><td id="csSupw">—</td></tr>
 </table>
 
 <!-- ================= REMARKS ================= -->
@@ -152,18 +135,6 @@
     <td class="center">Signature of Principal</td>
 </tr>
 </table>
-
-<!-- ================= GRADING SCALE ================= -->
-<div class="section-title">Grading Scale (Scholastic Areas)</div>
-<table>
-<tr><th>Marks</th><th>Grade</th><th>Remark</th></tr>
-<tr><td>81–100%</td><td>A</td><td>Excellent</td></tr>
-<tr><td>71–80%</td><td>B</td><td>Very Good</td></tr>
-<tr><td>51–70%</td><td>C</td><td>Good</td></tr>
-<tr><td>33–50%</td><td>D</td><td>Satisfactory</td></tr>
-<tr><td>Below 33%</td><td>E</td><td>Unsatisfactory</td></tr>
-</table>
-
 
 <script type="module" src="./js/report_card.js"></script>
 </body>

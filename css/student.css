@@ -1,72 +1,153 @@
-/* Reset & base */
-* {
-  box-sizing: border-box;
-  font-family: Arial, Helvetica, sans-serif;
-}
-
+/* =========================
+   BASE RESET & PAGE CENTER
+   ========================= */
 body {
-  margin: 0;
-  background: #f4f6f9;
-  color: #333;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
 }
 
-/* Page container */
-body > h2,
-body > label,
-body > select,
-body > input,
-body > button,
-body > p {
-  display: block;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
+/* =========================
+   MAIN CONTAINER
+   ========================= */
+.container {
+    width: 700px;
+    margin-top: 30px;
 }
 
-/* Heading */
+/* =========================
+   HEADINGS
+   ========================= */
 h2 {
-  margin-top: 40px;
-  margin-bottom: 25px;
-  text-align: center;
-  color: #2c3e50;
+    text-align: center;
+    margin-bottom: 20px;
 }
 
-/* Labels */
+/* =========================
+   CARD SECTIONS
+   ========================= */
+.card {
+    background: #ffffff;
+    padding: 18px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* =========================
+   FORM ELEMENTS (ADD STUDENT)
+   ========================= */
 label {
-  font-weight: bold;
-  margin-bottom: 6px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 6px;
 }
 
-/* Inputs */
-select,
-input[type="text"] {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 20px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+select {
+    width: 100%;
+    padding: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
 }
 
-/* Button */
-button {
-  width: 100%;
-  padding: 10px;
-  background: #007bff;
-  color: #fff;
-  border: none;
-  font-size: 15px;
-  cursor: pointer;
-  border-radius: 4px;
+/* Student name input (same width as select) */
+#studentName {
+    width: 100%;
+    padding: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
 }
 
-button:hover {
-  background: #0056b3;
+/* =========================
+   STUDENT TABLE
+   ========================= */
+.student-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
 }
 
-/* Message */
-#msg {
-  margin-top: 12px;
-  text-align: center;
-  font-weight: bold;
-  color: green;
+.student-table th,
+.student-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    vertical-align: middle;
+}
+
+/* Header */
+.student-table th {
+    background: #f1f1f1;
+    text-align: left;
+    font-weight: bold;
+}
+
+/* Column widths */
+.col-roll {
+    width: 70px;
+    text-align: center;
+}
+
+.col-name {
+    width: auto;
+}
+
+.col-action {
+    width: 160px;
+    text-align: center;
+}
+
+/* =========================
+   INPUT INSIDE TABLE (EDIT MODE)
+   ========================= */
+.student-table input[type="text"] {
+    width: 100%;
+    padding: 5px;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+/* =========================
+   ACTION BUTTONS
+   ========================= */
+.student-table button {
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+/* Update button */
+.student-table button:first-child {
+    background-color: #2f80ed;
+    color: #ffffff;
+}
+
+/* Delete button */
+.student-table button:last-child {
+    background-color: #c0392b;
+    color: #ffffff;
+}
+
+/* Hover */
+.student-table button:hover {
+    opacity: 0.85;
+}
+
+/* =========================
+   ROW STYLING
+   ========================= */
+.student-table tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.student-table tbody tr:hover {
+    background-color: #eef3ff;
 }

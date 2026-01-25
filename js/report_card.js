@@ -1,183 +1,152 @@
-// reportcard.js
-import { ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, get } from
+"https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { db } from "./firebase.js";
 
-console.log("✅ reportcard.js loaded");
-
-/* ===============================
-   DOM ELEMENTS
-   =============================== */
+/* ================= DOM ================= */
 const classSelect   = document.getElementById("classSelect");
 const studentSelect = document.getElementById("studentSelect");
 const tbody         = document.getElementById("marks-body");
 
-const displayName  = document.getElementById("displayName");
-const displayRoll  = document.getElementById("displayRoll");
-const displayClass = document.getElementById("displayClass");
+const displayClass  = document.getElementById("displayClass");
+const displayRoll   = document.getElementById("displayRoll");
+const displayName   = document.getElementById("displayName");
 
-/* ===============================
-   CACHE
-   =============================== */
-let studentsCache = {};
+const overallTotalEl = document.getElementById("overallTotal");
+const percentageEl   = document.getElementById("percentage");
 
-/* ===============================
-   LOAD CLASSES
-   =============================== */
-async function loadClasses() {
-    classSelect.innerHTML   = `<option value="">Select Class</option>`;
-    studentSelect.innerHTML = `<option value="">Select Student</option>`;
-    studentSelect.disabled  = true;
-    tbody.innerHTML         = "";
+/* ================= CACHE ================= */
+let orderedStudents = [];
 
-    resetStudentInfo();
+/* ================= HELPERS ================= */
+const pad2 = v => (v === "" || v == null) ? "" : String(v).padStart(2,"0");
+const grade = t => t>=90?"A":t>=75?"B":t>=60?"C":t>=45?"D":"E";
 
-    const snap = await get(ref(db, "students"));
-    if (!snap.exists()) return;
-
-    Object.keys(snap.val()).forEach(classKey => {
-        const opt = document.createElement("option");
-        opt.value = classKey;                 // DB KEY
-        opt.textContent = classKey.replace("class", "Class ");
-        classSelect.appendChild(opt);
-    });
+function resetExtras(){
+  [
+    "attSem1Work","attSem1Present",
+    "attSem2Work","attSem2Present",
+    "csConfidence","csUniform","csDiscipline",
+    "csSpoken","csPunctuality","csSupw"
+  ].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent="—";
+  });
 }
 
-/* ===============================
-   LOAD STUDENTS
-   =============================== */
-async function loadStudents(classKey) {
-    studentSelect.innerHTML = `<option value="">Select Student</option>`;
-    studentSelect.disabled  = true;
-    tbody.innerHTML         = "";
-    resetStudentInfo();
+/* ================= LOAD CLASSES ================= */
+async function loadClasses(){
+  const snap = await get(ref(db,"students"));
+  if(!snap.exists()) return;
 
-    if (!classKey) return;
-
-    displayClass.textContent = classKey.replace("class", "Class ");
-
-    const snap = await get(ref(db, `students/${classKey}`));
-    if (!snap.exists()) return;
-
-    studentsCache = snap.val();
-
-    Object.entries(studentsCache)
-        .sort((a, b) => a[1].roll - b[1].roll)
-        .forEach(([rollKey, student]) => {
-            const opt = document.createElement("option");
-            opt.value = rollKey;            // DB KEY
-            opt.textContent = `Roll ${student.roll} - ${student.name}`;
-            studentSelect.appendChild(opt);
-        });
-
-    studentSelect.disabled = false;
+  Object.keys(snap.val()).forEach(cls=>{
+    const opt=document.createElement("option");
+    opt.value=cls;
+    opt.textContent=cls.replace("class","Class ");
+    classSelect.appendChild(opt);
+  });
 }
 
-/* ===============================
-   LOAD REPORT CARD
-   =============================== */
-async function loadReportCard(classKey, rollKey) {
-    tbody.innerHTML = "";
-    if (!classKey || !rollKey) return;
+/* ================= LOAD STUDENTS ================= */
+async function loadStudents(cls){
+  studentSelect.innerHTML=`<option value="">Select Student</option>`;
+  resetExtras();
+  tbody.innerHTML="";
 
-    const student = studentsCache[rollKey];
-    if (!student) return;
+  const snap=await get(ref(db,`students/${cls}`));
+  if(!snap.exists()) return;
 
-    // ✅ UPDATE STUDENT INFO TABLE
-    displayClass.textContent = classKey.replace("class", "Class ");
-    displayRoll.textContent  = student.roll;
-    displayName.textContent  = student.name.toUpperCase();
+  orderedStudents=Object.entries(snap.val())
+    .sort((a,b)=>a[1].roll-b[1].roll);
 
-    const rollIndex = rollKey.replace("roll_", "");
+  orderedStudents.forEach(([k,s],i)=>{
+    const opt=document.createElement("option");
+    opt.value=i;
+    opt.textContent=`Roll ${pad2(s.roll)} - ${s.name}`;
+    studentSelect.appendChild(opt);
+  });
 
-    const subjectsSnap = await get(ref(db, `subjects/${classKey}`));
-    const marksSnap    = await get(ref(db, `marks/${classKey}`));
-
-    if (!subjectsSnap.exists() || !marksSnap.exists()) return;
-
-    const subjects = subjectsSnap.val();
-    const marks    = marksSnap.val();
-
-    Object.entries(subjects).forEach(([subjectKey, subjectValue]) => {
-
-        const displaySubject =
-            typeof subjectValue === "string"
-                ? subjectValue
-                : subjectValue?.name ?? subjectKey;
-
-        const i1 = marks.internal1?.[subjectKey]?.[rollIndex] ?? "";
-        const mt = marks.midterm?.[subjectKey]?.[rollIndex] ?? "";
-        const i2 = marks.internal2?.[subjectKey]?.[rollIndex] ?? "";
-        const fe = marks.final?.[subjectKey]?.[rollIndex] ?? "";
-
-        const sem1Total = (Number(i1) || 0) + (Number(mt) || 0) || "";
-        const sem2Total = (Number(i2) || 0) + (Number(fe) || 0) || "";
-
-        const w40 = sem1Total !== "" ? Math.round(sem1Total * 0.4) : "";
-        const w60 = sem2Total !== "" ? Math.round(sem2Total * 0.6) : "";
-        const grand = w40 !== "" && w60 !== "" ? w40 + w60 : "";
-
-        tbody.insertAdjacentHTML("beforeend", `
-            <tr>
-                <td class="left">${displaySubject}</td>
-
-                <td>20</td><td>${i1}</td>
-                <td>80</td><td>${mt}</td>
-                <td>${sem1Total}</td>
-
-                <td>20</td><td>${i2}</td>
-                <td>80</td><td>${fe}</td>
-                <td>${sem2Total}</td>
-
-                <td>${w40}</td>
-                <td>${w60}</td>
-                <td>${grand}</td>
-                <td>${grade(grand)}</td>
-            </tr>
-        `);
-    });
+  studentSelect.disabled=false;
 }
 
-/* ===============================
-   RESET STUDENT INFO
-   =============================== */
-function resetStudentInfo() {
-    displayClass.textContent = "—";
-    displayRoll.textContent  = "—";
-    displayName.textContent  = "—";
+/* ================= LOAD REPORT ================= */
+async function loadReport(cls,index){
+  index=Number(index);
+  resetExtras();
+  tbody.innerHTML="";
+
+  const [rk,stu]=orderedStudents[index];
+
+  displayClass.textContent=cls.replace("class","Class ");
+  displayRoll.textContent=pad2(stu.roll);
+  displayName.textContent=stu.name.toUpperCase();
+
+  const [subSnap,markSnap]=await Promise.all([
+    get(ref(db,`subjects/${cls}`)),
+    get(ref(db,`marks/${cls}`))
+  ]);
+
+  let total=0,count=0;
+
+  Object.entries(subSnap.val()).forEach(([sk,sv])=>{
+    const i1=markSnap.val().internal1?.[sk]?.[index]||"";
+    const mt=markSnap.val().midterm?.[sk]?.[index]||"";
+    const i2=markSnap.val().internal2?.[sk]?.[index]||"";
+    const fe=markSnap.val().final?.[sk]?.[index]||"";
+
+    const s1=+i1 + +mt;
+    const s2=+i2 + +fe;
+    const w40=Math.round(s1*0.4);
+    const w60=Math.round(s2*0.6);
+    const g=w40+w60;
+
+    total+=g; count++;
+
+    tbody.insertAdjacentHTML("beforeend",`
+      <tr>
+        <td>${sv.name||sk}</td>
+        <td>20</td><td>${pad2(i1)}</td>
+        <td>80</td><td>${pad2(mt)}</td>
+        <td>${pad2(s1)}</td>
+        <td>20</td><td>${pad2(i2)}</td>
+        <td>80</td><td>${pad2(fe)}</td>
+        <td>${pad2(s2)}</td>
+        <td>${pad2(w40)}</td>
+        <td>${pad2(w60)}</td>
+        <td>${pad2(g)}</td>
+        <td>${grade(g)}</td>
+      </tr>
+    `);
+  });
+
+  overallTotalEl.textContent=total;
+  percentageEl.textContent=(total/count).toFixed(2);
+
+  /* ===== CO-SCHOLASTIC ===== */
+  const cs=await get(ref(db,`co_scholastic/${cls}/${index}`));
+  if(cs.exists()){
+    const c=cs.val();
+    csConfidence.textContent=c.confidence||"—";
+    csUniform.textContent=c.uniform||"—";
+    csDiscipline.textContent=c.discipline||"—";
+    csSpoken.textContent=c.spoken_english||"—";
+    csPunctuality.textContent=c.punctuality||"—";
+    csSupw.textContent=c.supw||"—";
+  }
+
+  /* ===== ATTENDANCE ===== */
+  const at=await get(ref(db,`attendance/${cls}/${index}`));
+  if(at.exists()){
+    const a=at.val();
+    attSem1Work.textContent=a.sem1_working||"—";
+    attSem1Present.textContent=a.sem1_present||"—";
+    attSem2Work.textContent=a.sem2_working||"—";
+    attSem2Present.textContent=a.sem2_present||"—";
+  }
 }
 
-/* ===============================
-   GRADE LOGIC
-   =============================== */
-function grade(total) {
-    if (total === "") return "";
-    if (total >= 90) return "A";
-    if (total >= 75) return "B";
-    if (total >= 60) return "C";
-    if (total >= 45) return "D";
-    return "E";
-}
+/* ================= EVENTS ================= */
+classSelect.onchange=()=>loadStudents(classSelect.value);
+studentSelect.onchange=()=>loadReport(classSelect.value,studentSelect.value);
 
-/* ===============================
-   EVENTS
-   =============================== */
-classSelect.addEventListener("change", () => {
-    loadStudents(classSelect.value);
-});
-
-studentSelect.addEventListener("change", () => {
-    loadReportCard(classSelect.value, studentSelect.value);
-});
-
-/* ===============================
-   PRINT
-   =============================== */
-window.printReport = function () {
-    document.body.classList.add("frozen");
-    window.print();
-};
-
-/* ===============================
-   INIT
-   =============================== */
-window.addEventListener("DOMContentLoaded", loadClasses);
+window.printReport=()=>window.print();
+window.onload=loadClasses;
